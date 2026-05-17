@@ -38,33 +38,32 @@ class UserController extends Controller
     }
 
     // FUNGSI INI YANG MENYEBABKAN ERROR JIKA HILANG
-    public function edit($id)
+    public function edit(User $user)
     {
-        $user = User::findOrFail($id);
+        // Proteksi: Jika bukan admin, tendang balik ke dashboard
+        if (auth()->user()->jabatan !== 'admin') {
+            return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses.');
+        }
+
         return view('users.edit', compact('user'));
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, User $user)
     {
-        $user = User::findOrFail($id);
+        // Proteksi: Hanya admin yang bisa update
+        if (auth()->user()->jabatan !== 'admin') {
+            abort(403, 'Unauthorized action.');
+        }
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $id,
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'jabatan' => 'required',
         ]);
 
-        $user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'jabatan' => $request->jabatan,
-        ]);
+        $user->update($request->all());
 
-        if ($request->filled('password')) {
-            $user->update(['password' => Hash::make($request->password)]);
-        }
-
-        return redirect()->route('pengguna.index')->with('success', 'Data diperbarui!');
+        return redirect()->route('users.index')->with('success', 'Data petugas berhasil diubah.');
     }
 
     public function destroy($id)

@@ -1,52 +1,51 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\TransaksiController;
+use Illuminate\Support\Facades\Route;
 
-// 1. HALAMAN PUBLIK (Bisa diakses tanpa login)
-Route::get('/', function () { 
-    return view('welcome_bsi'); 
-})->name('landing');
+// Halaman Welcome
+Route::get('/', function () {
+    return view('welcome_bsi');
+});
 
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
-Route::get('/register', function () { return view('register'); })->name('register');
-Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
+// Grouping Route yang memerlukan login (auth)
+Route::middleware(['auth', 'verified'])->group(function () {
 
-// 2. MENU UTAMA (WAJIB LOGIN)
-Route::middleware(['auth'])->group(function () {
-    
-    // Dashboard
+    // 1. DASHBOARD (Akses: Admin & Petugas)
     Route::get('/dashboard', [BarangController::class, 'dashboard'])->name('dashboard');
 
-    // Data Barang
+    // 2. MANAJEMEN PENGGUNA (Akses: Khusus Admin)
+    Route::resource('pengguna', UserController::class)->middleware('can:manage-users');
+
+    // 3. MANAJEMEN BARANG (Akses: Campuran)
+    // Petugas hanya bisa melihat (Read-only)
     Route::get('/barang', [BarangController::class, 'index'])->name('barang.index');
-    Route::post('/barang/store', [BarangController::class, 'store'])->name('barang.store');
-    Route::put('/barang/update/{id}', [BarangController::class, 'update'])->name('barang.update');
-    Route::delete('/barang/destroy/{id}', [BarangController::class, 'destroy'])->name('barang.destroy');
 
-    // Fitur Transaksi
-    Route::get('/transaksi', [BarangController::class, 'transaksi'])->name('transaksi');
-    Route::post('/transaksi', [BarangController::class, 'storeTransaksi'])->name('transaksi.store');
+    // Proteksi Modifikasi Barang (Akses: Khusus Admin)
+    Route::middleware(['can:manage-users'])->group(function () {
+        Route::post('/barang', [BarangController::class, 'store'])->name('barang.store');
+        Route::put('/barang/update/{id}', [BarangController::class, 'update'])->name('barang.update');
+        Route::delete('/barang/{id}', [BarangController::class, 'destroy'])->name('barang.destroy');
+    });
 
-    // HALAMAN PROFIL
-    Route::get('/profil', function () {
-        return view('profile.index'); 
-    })->name('profil');
+    // 4. TRANSAKSI (Akses: Admin & Petugas)
+    Route::get('/transaksi', [TransaksiController::class, 'index'])->name('transaksi.index');
+    Route::post('/transaksi', [TransaksiController::class, 'store'])->name('transaksi.store');
 
-    // LAPORAN
-    Route::get('/laporan', [BarangController::class, 'laporan'])->name('laporan');
+    // 5. LAPORAN & CETAK (Akses: Admin & Petugas)
+    // Dipindahkan ke TransaksiController agar fitur filter dan PDF berjalan sinkron
+    Route::get('/laporan', [TransaksiController::class, 'laporan'])->name('laporan.index');
+    Route::get('/laporan/cetak', [TransaksiController::class, 'cetakPdf'])->name('laporan.cetak');
 
-    // MANAJEMEN PENGGUNA
-    Route::get('/pengguna', [UserController::class, 'index'])->name('pengguna.index');
-    Route::get('/pengguna/create', [UserController::class, 'create'])->name('pengguna.create');
-    Route::post('/pengguna', [UserController::class, 'store'])->name('pengguna.store');
-    Route::get('/pengguna/{id}/edit', [UserController::class, 'edit'])->name('pengguna.edit');
-    Route::put('/pengguna/{id}', [UserController::class, 'update'])->name('pengguna.update');
-    Route::delete('/pengguna/{id}', [UserController::class, 'destroy'])->name('pengguna.destroy');
-
-    // LOGOUT
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    // 6. PROFILE SETTINGS
+    // Menggunakan nama rute standar 'profile.edit' agar sinkron dengan layout
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+// Memuat rute autentikasi standar (login, logout, dll)
+require __DIR__ . '/auth.php';

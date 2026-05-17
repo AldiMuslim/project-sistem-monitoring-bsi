@@ -111,7 +111,8 @@
         <div class="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 flex flex-col h-full">
             <div class="flex justify-between items-center mb-8">
                 <h3 class="font-black text-gray-800 uppercase text-xs tracking-widest">Aktivitas Terkini</h3>
-                <a href="{{ route('transaksi') }}"
+                {{-- PERBAIKAN: Mengubah 'transaksi' menjadi 'transaksi.index' --}}
+                <a href="{{ route('transaksi.index') }}"
                     class="text-[10px] bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-black hover:bg-blue-600 hover:text-white transition-colors duration-300">SEMUA</a>
             </div>
 
@@ -119,11 +120,11 @@
                 @forelse($recentTransaksi as $rt)
                     <div
                         class="flex items-center gap-4 group p-2 hover:bg-gray-50 rounded-2xl transition-all duration-300 border-b border-gray-50 last:border-0">
-                        {{-- Memperbaiki pemanggilan $rt->jenis menjadi $rt->jenis_transaksi sesuai database --}}
+                        {{-- PERBAIKAN: Menggunakan $rt->jenis agar sesuai dengan DatabaseSeeder --}}
                         <div
-                            class="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm {{ strtoupper($rt->jenis_transaksi) == 'MASUK' ? 'bg-green-50 text-green-600' : 'bg-rose-50 text-rose-600' }}">
+                            class="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm {{ strtoupper($rt->jenis) == 'MASUK' ? 'bg-green-50 text-green-600' : 'bg-rose-50 text-rose-600' }}">
                             <i
-                                class="fas {{ strtoupper($rt->jenis_transaksi) == 'MASUK' ? 'fa-arrow-down' : 'fa-arrow-up' }} text-xs"></i>
+                                class="fas {{ strtoupper($rt->jenis) == 'MASUK' ? 'fa-arrow-down' : 'fa-arrow-up' }} text-xs"></i>
                         </div>
                         <div class="flex-1">
                             <p
@@ -136,8 +137,8 @@
                         </div>
                         <div class="text-right">
                             <p
-                                class="text-[10px] font-black {{ strtoupper($rt->jenis_transaksi) == 'MASUK' ? 'text-green-600' : 'text-rose-600' }}">
-                                {{ strtoupper($rt->jenis_transaksi) == 'MASUK' ? '+' : '-' }}{{ $rt->jumlah }}
+                                class="text-[10px] font-black {{ strtoupper($rt->jenis) == 'MASUK' ? 'text-green-600' : 'text-rose-600' }}">
+                                {{ strtoupper($rt->jenis) == 'MASUK' ? '+' : '-' }}{{ $rt->jumlah }}
                             </p>
                             <p class="text-[8px] font-bold text-gray-300 uppercase">Unit</p>
                         </div>

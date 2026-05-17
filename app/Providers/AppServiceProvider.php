@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Gate;
+use App\Models\User;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +22,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        if (str_contains(request()->getHttpHost(), 'ngrok-free.dev')) {
+            URL::forceScheme('https');
+        }
+
+        // Gate untuk mengecek apakah user adalah admin
+        Gate::define('manage-users', function (User $user) {
+            return $user->jabatan === 'admin';
+        });
+
+        // Gate untuk mengecek apakah user adalah petugas
+        Gate::define('is-petugas', function (User $user) {
+            return $user->jabatan === 'petugas';
+        });
     }
 }

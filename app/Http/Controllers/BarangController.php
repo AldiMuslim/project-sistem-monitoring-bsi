@@ -4,44 +4,44 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Barang;
+use App\Models\Transaksi;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate; // Tambahkan ini
+use Carbon\Carbon;
 
 class BarangController extends Controller
 {
-
-    // 1. DASHBOARD DINAMIS (Sinkron ke tampilan Dashboard BSI)
+    /**
+     * DASHBOARD DINAMIS
+     * Dapat diakses oleh Admin dan Petugas
+     */
     public function dashboard()
     {
-        // 1. Data Ringkasan Atas
-        $totalJenisBarang = \App\Models\Barang::count();
-        $totalStok = \App\Models\Barang::sum('stok');
-        $transaksiHariIni = \App\Models\Transaksi::whereDate('created_at', \Carbon\Carbon::today())->count();
-        $stokMenipisCount = \App\Models\Barang::where('stok', '<=', 5)->count();
+        $totalJenisBarang = Barang::count();
+        $totalStok = Barang::sum('stok');
+        $transaksiHariIni = Transaksi::whereDate('created_at', Carbon::today())->count();
+        $stokMenipisCount = Barang::where('stok', '<=', 5)->count();
 
-        // 2. Data Aktivitas Terbaru (Sisi Kanan)
-        $recentTransaksi = \App\Models\Transaksi::orderBy('created_at', 'desc')->limit(5)->get();
+        $recentTransaksi = Transaksi::orderBy('created_at', 'desc')->limit(5)->get();
 
-        // 3. Olah Data Grafik 7 Hari Terakhir
         $chartData = [];
         for ($i = 6; $i >= 0; $i--) {
-            $date = \Carbon\Carbon::now()->subDays($i)->format('Y-m-d');
+            $date = Carbon::now()->subDays($i)->format('Y-m-d');
 
-            // Hitung jumlah transaksi berdasar kata kunci (huruf besar/kecil tidak masalah)
-            $jumlahAtm = \App\Models\Transaksi::whereDate('created_at', $date)
+            $jumlahAtm = Transaksi::whereDate('created_at', $date)
                 ->where('nama_barang', 'LIKE', '%ATM%')
                 ->sum('jumlah');
 
-            $jumlahBuku = \App\Models\Transaksi::whereDate('created_at', $date)
+            $jumlahBuku = Transaksi::whereDate('created_at', $date)
                 ->where('nama_barang', 'LIKE', '%BUKU%')
                 ->sum('jumlah');
 
-            // Konversi ke persentase tinggi (maksimal 100%)
             $tinggiAtm = min(($jumlahAtm / 50) * 100, 100);
             $tinggiBuku = min(($jumlahBuku / 50) * 100, 100);
 
             $chartData[] = [
-                'hari' => \Carbon\Carbon::now()->subDays($i)->translatedFormat('D'),
-                'atm' => $tinggiAtm > 0 ? $tinggiAtm : 2, // Minimal tinggi 2% agar batang terlihat
+                'hari' => Carbon::now()->subDays($i)->translatedFormat('D'),
+                'atm' => $tinggiAtm > 0 ? $tinggiAtm : 2,
                 'buku' => $tinggiBuku > 0 ? $tinggiBuku : 2,
                 'asli_atm' => (int) $jumlahAtm,
                 'asli_buku' => (int) $jumlahBuku
@@ -58,21 +58,85 @@ class BarangController extends Controller
         ));
     }
 
-    // 2. HALAMAN DATA BARANG
+    /**
+     * HALAMAN DATA BARANG
+     * Dapat diakses oleh Admin dan Petugas (Read-Only untuk Petugas)
+     */
     public function index()
     {
         $barangs = Barang::all();
         return view('barang.index', compact('barangs'));
     }
 
-    // 3. HALAMAN TRANSAKSI (Tampil Riwayat)
+    /**
+     * SIMPAN BARANG BARU
+     * KHUSUS ADMIN
+     */
+    public function store(Request $request)
+    {
+        // Proteksi Gate: Hanya Admin
+        Gate::authorize('manage-users');
+
+        $request->validate([
+            'nama_barang' => 'required',
+            'stok' => 'required|numeric',
+            'satuan' => 'required',
+        ]);
+
+        $jenis = str_contains($request->nama_barang, 'Kartu') ? 'ATM' : 'Buku';
+
+        Barang::create([
+            'nama_barang' => $request->nama_barang,
+            'jenis'       => $jenis,
+            'stok'        => $request->stok,
+            'satuan'      => $request->satuan,
+            'keterangan'  => $request->keterangan,
+        ]);
+
+        return back()->with('success', 'Barang baru berhasil disimpan!');
+    }
+
+    /**
+     * UPDATE DATA BARANG
+     * KHUSUS ADMIN
+     */
+    public function update(Request $request, $id)
+    {
+        // Proteksi Gate: Hanya Admin
+        Gate::authorize('manage-users');
+
+        $barang = Barang::findOrFail($id);
+        $barang->update($request->all());
+        return back()->with('success', 'Data berhasil diubah!');
+    }
+
+    /**
+     * HAPUS BARANG
+     * KHUSUS ADMIN
+     */
+    public function destroy($id)
+    {
+        // Proteksi Gate: Hanya Admin
+        Gate::authorize('manage-users');
+
+        Barang::findOrFail($id)->delete();
+        return back()->with('success', 'Barang berhasil dihapus!');
+    }
+
+    /**
+     * HALAMAN TRANSAKSI
+     * Dapat diakses oleh Admin dan Petugas
+     */
     public function transaksi()
     {
         $riwayat = DB::table('transaksis')->orderBy('created_at', 'desc')->get();
         return view('barang.barang_keluar', compact('riwayat'));
     }
 
-    // 4. SIMPAN TRANSAKSI & UPDATE STOK
+    /**
+     * SIMPAN TRANSAKSI & UPDATE STOK
+     * Admin dan Petugas bisa melakukan transaksi
+     */
     public function storeTransaksi(Request $request)
     {
         $request->validate([
@@ -110,46 +174,8 @@ class BarangController extends Controller
         return back()->with('error', 'Barang tidak ditemukan!');
     }
 
-    // 5. TAMBAH BARANG BARU (Fix Field 'jenis')
-    public function store(Request $request)
-    {
-        $request->validate([
-            'nama_barang' => 'required',
-            'stok' => 'required|numeric',
-            'satuan' => 'required',
-        ]);
-
-        $jenis = str_contains($request->nama_barang, 'Kartu') ? 'ATM' : 'Buku';
-
-        Barang::create([
-            'nama_barang' => $request->nama_barang,
-            'jenis'       => $jenis,
-            'stok'        => $request->stok,
-            'satuan'      => $request->satuan,
-            'keterangan'  => $request->keterangan,
-        ]);
-
-        return back()->with('success', 'Barang baru berhasil disimpan!');
-    }
-
-    // 6. EDIT & HAPUS
-    public function update(Request $request, $id)
-    {
-        $barang = Barang::findOrFail($id);
-        $barang->update($request->all());
-        return back()->with('success', 'Data berhasil diubah!');
-    }
-
-    public function destroy($id)
-    {
-        Barang::findOrFail($id)->delete();
-        return back()->with('success', 'Barang berhasil dihapus!');
-    }
-    public function laporan()
-    {
-        $barang = \App\Models\Barang::all();
-        $total_stok = \App\Models\Barang::sum('stok');
-
-        return view('laporan', compact('barang', 'total_stok'));
-    }
+    /**
+     * HALAMAN LAPORAN
+     */
+    
 }

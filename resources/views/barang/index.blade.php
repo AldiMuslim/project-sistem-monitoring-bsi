@@ -7,9 +7,13 @@
             <h1 class="text-2xl font-black text-[#00676F]">Data Barang</h1>
             <p class="text-sm text-gray-400">Kelola persediaan Kartu ATM & Buku Tabungan</p>
         </div>
+        
+        {{-- HANYA ADMIN yang bisa melihat tombol Tambah Barang --}}
+        @can('manage-users')
         <button onclick="openModal('tambah')" class="bg-[#00676F] text-white px-6 py-3 rounded-2xl font-bold shadow-lg hover:bg-teal-800 transition">
             + Tambah Barang
         </button>
+        @endcan
     </div>
 
     @if(session('success'))
@@ -26,7 +30,10 @@
                     <th class="p-6">Nama Barang</th>
                     <th class="p-6 text-center">Stok</th>
                     <th class="p-6">Satuan</th>
+                    {{-- Kolom Aksi hanya tampil untuk Admin --}}
+                    @can('manage-users')
                     <th class="p-6 text-center">Aksi</th>
+                    @endcan
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
@@ -41,6 +48,9 @@
                     </td>
                     <td class="p-6 text-center font-black text-lg">{{ $b->stok }}</td>
                     <td class="p-6 text-sm text-gray-400 font-bold uppercase">{{ $b->satuan }}</td>
+                    
+                    {{-- Proteksi Baris Aksi untuk Admin --}}
+                    @can('manage-users')
                     <td class="p-6">
                         <div class="flex justify-center gap-3">
                             <button onclick="openModal('edit', {{ json_encode($b) }})" class="bg-orange-100 text-orange-600 p-3 rounded-2xl hover:bg-orange-500 hover:text-white transition shadow-sm">
@@ -55,6 +65,7 @@
                             </form>
                         </div>
                     </td>
+                    @endcan
                 </tr>
                 @endforeach
             </tbody>
@@ -62,6 +73,7 @@
     </div>
 </div>
 
+{{-- Modal hanya perlu dirender jika Admin, tapi agar JS tidak error tetap dibiarkan dengan proteksi --}}
 <div id="modalBSI" class="fixed inset-0 bg-teal-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-lg rounded-[45px] shadow-2xl overflow-hidden border-b-[10px] border-[#F2A900]">
         <div class="p-10">
@@ -104,13 +116,16 @@
     const form = document.getElementById('mForm');
     
     function openModal(mode, data = null) {
+        // Tambahan proteksi sisi client: Jika bukan admin, jangan jalankan modal
+        @if(auth()->user()->jabatan !== 'admin')
+            alert('Akses Ditolak: Anda bukan Admin!');
+            return;
+        @endif
+
         modal.classList.replace('hidden', 'flex');
         if(mode === 'edit') {
             document.getElementById('mTitle').innerText = 'Edit Data Barang';
-            
-            // PERBAIKAN: Mengarah ke rute update yang ada di web.php
             form.action = "/barang/update/" + data.id; 
-            
             document.getElementById('mMethod').innerHTML = '@method("PUT")';
             document.getElementById('mNama').value = data.nama_barang;
             document.getElementById('mStok').value = data.stok;

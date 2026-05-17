@@ -11,17 +11,27 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Buat Akun Admin (Jika belum ada)
-        if (User::where('email', 'admin@example.com')->count() == 0) {
-            User::create([
+        // 1. Buat Akun Admin (Gunakan updateOrCreate agar lebih aman)
+        User::updateOrCreate(
+            ['email' => 'admin@example.com'],
+            [
                 'name' => 'Admin BSI',
-                'email' => 'admin@example.com',
-                'jabatan' => 'admin',
+                'jabatan' => 'admin', // Role Admin
                 'password' => bcrypt('password123'),
-            ]);
-        }
+            ]
+        );
+
+        // 2. Buat Akun Petugas
+        User::updateOrCreate(
+            ['email' => 'petugas@example.com'],
+            [
+                'name' => 'Petugas BSI',
+                'jabatan' => 'petugas', // Role Petugas
+                'password' => bcrypt('password123'),
+            ]
+        );
         
-        // 2. Masukkan Data Barang Dummy
+        // 3. Masukkan Data Barang Dummy
         DB::table('barangs')->insert([
             [
                 'id' => 1,
@@ -55,7 +65,7 @@ class DatabaseSeeder extends Seeder
             ]
         ]);
 
-        // 3. Masukkan Data Transaksi 7 Hari Terakhir untuk Uji Coba Grafik
+        // 4. Masukkan Data Transaksi 7 Hari Terakhir
         $transaksis = [];
         
         for ($i = 6; $i >= 0; $i--) {
@@ -63,20 +73,20 @@ class DatabaseSeeder extends Seeder
 
             $transaksis[] = [
                 'nama_barang' => 'KARTU ATM PLATINUM', 
-                'jenis' => 'KELUAR', // Ganti dari 'jenis_transaksi' ke 'jenis'
+                'jenis' => 'KELUAR', 
                 'jumlah' => rand(10, 45), 
                 'tanggal' => $date->format('Y-m-d'),
-                'petugas' => 'Admin',
+                'petugas' => 'Admin BSI', // Nama petugas disesuaikan
                 'created_at' => $date,
                 'updated_at' => $date,
             ];
 
             $transaksis[] = [
                 'nama_barang' => 'BUKU TABUNGAN WADIAH',
-                'jenis' => 'KELUAR', // Ganti dari 'jenis_transaksi' ke 'jenis'
+                'jenis' => 'KELUAR', 
                 'jumlah' => rand(5, 30), 
                 'tanggal' => $date->format('Y-m-d'),
-                'petugas' => 'Admin',
+                'petugas' => 'Petugas BSI', // Contoh transaksi oleh petugas
                 'created_at' => $date,
                 'updated_at' => $date,
             ];
@@ -84,10 +94,10 @@ class DatabaseSeeder extends Seeder
 
         $transaksis[] = [
             'nama_barang' => 'KARTU ATM GOLD',
-            'jenis' => 'MASUK', // Ganti dari 'jenis_transaksi' ke 'jenis'
+            'jenis' => 'MASUK', 
             'jumlah' => 100,
             'tanggal' => Carbon::today()->format('Y-m-d'),
-            'petugas' => 'Admin',
+            'petugas' => 'Admin BSI',
             'created_at' => Carbon::today(),
             'updated_at' => Carbon::today(),
         ];

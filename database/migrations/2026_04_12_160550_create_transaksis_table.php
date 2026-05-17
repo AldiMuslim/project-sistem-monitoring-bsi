@@ -6,25 +6,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('transaksis', function (Blueprint $table) {
             $table->id();
-            $table->string('nama_barang'); // Untuk menyimpan nama barang BSI
-            $table->enum('jenis', ['MASUK', 'KELUAR']); // Pilihan status transaksi
-            $table->integer('jumlah'); // Jumlah barang yang keluar/masuk
-            $table->string('petugas'); // Nama user yang menginput (Siti Rasma)
-            $table->date('tanggal'); // Tanggal transaksi dilakukan
-            $table->timestamps(); // Mencatat otomatis created_at dan updated_at
+            $table->foreignId('barang_id')->nullable()->constrained('barangs')->onDelete('set null');
+            $table->string('nama_barang');
+            $table->enum('jenis', ['MASUK', 'KELUAR']);
+            $table->integer('jumlah');
+            $table->string('petugas');
+            $table->date('tanggal');
+            $table->string('keterangan')->nullable(); // Ditambahkan agar sinkron dengan Model & Controller
+            $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('transaksis');

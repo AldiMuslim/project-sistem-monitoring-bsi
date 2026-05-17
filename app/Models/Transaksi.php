@@ -2,23 +2,32 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Transaksi extends Model
 {
-    // Hapus atau ganti baris ini menjadi 'transaksis'
-    protected $table = 'transaksis'; 
+    use HasFactory;
+
+    protected $table = 'transaksis';
 
     protected $fillable = [
         'barang_id',
-        'jenis_transaksi', // Pastikan menggunakan nama kolom yang benar sesuai database (sebelumnya Anda tulis 'jenis')
+        'nama_barang', // Tambahkan ini agar bisa disimpan lewat model
+        'jenis',       // Sesuaikan dengan Migration
         'jumlah',
+        'petugas',     // Tambahkan ini
         'tanggal',
         'keterangan'
     ];
 
+    protected $casts = [
+        'tanggal' => 'date',
+        'jumlah'  => 'integer',
+    ];
+
     public function barang()
     {
-        return $this->belongsTo(Barang::class);
+        return $this->belongsTo(Barang::class, 'barang_id');
     }
 }

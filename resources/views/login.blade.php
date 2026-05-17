@@ -106,7 +106,7 @@
             <p class="text-[10px] font-bold text-gray-500 uppercase tracking-[0.4em] mt-8 mb-2">Inventory System</p>
         </div>
 
-        <form action="{{ route('login.submit') }}" method="POST" class="space-y-6">
+        <form method="POST" action="{{ route('login') }}">
             @csrf
 
             @if($errors->any())
