@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login BSI Inventory - Premium Version</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
+
     <style>
         body {
             font-family: 'Public Sans', sans-serif;
@@ -89,49 +90,62 @@
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;700;900&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
     <div class="absolute -top-24 -left-24 w-96 h-96 bg-[#F2A900] rounded-full blur-[150px] opacity-10"></div>
     <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-teal-500 rounded-full blur-[150px] opacity-10"></div>
 
     <div class="premium-card w-full max-w-[550px] rounded-[60px] p-12 md:p-16 z-10 text-center">
-        
+
         <div class="mb-10">
             <div class="logo-container">
                 <span class="bsi-text-main">BSI</span>
                 <i class="fa-solid fa-star bsi-star"></i>
             </div>
             <div class="bsi-subtext">Bank Syariah Indonesia</div>
-            
+
             <p class="text-[10px] font-bold text-gray-500 uppercase tracking-[0.4em] mt-8 mb-2">Inventory System</p>
         </div>
 
         <form method="POST" action="{{ route('login') }}">
             @csrf
 
-            @if($errors->any())
-                <div class="bg-red-500/20 border border-red-500 text-red-200 text-[10px] py-3 px-4 rounded-xl mb-4 uppercase tracking-widest">
+            @if ($errors->any())
+                <div
+                    class="bg-red-500/20 border border-red-500 text-red-200 text-[10px] py-3 px-4 rounded-xl mb-4 uppercase tracking-widest text-left">
                     {{ $errors->first() }}
                 </div>
             @endif
 
-            <div class="relative text-left">
+            <div class="relative text-left mb-4">
                 <i class="fa-regular fa-envelope absolute left-6 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                <input type="email" name="email" required placeholder="Masukkan Email Anda"
-                       class="input-premium w-full rounded-2xl pl-14 pr-6 py-4 text-sm">
+                <input type="email" name="email" value="{{ old('email') }}" required autofocus
+                    placeholder="Masukkan Email Anda" class="input-premium w-full rounded-2xl pl-14 pr-6 py-4 text-sm">
             </div>
 
-            <div class="relative text-left">
+            <div class="relative text-left mb-2">
                 <i class="fa-solid fa-lock absolute left-6 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                <input type="password" name="password" required placeholder="Masukkan Password"
-                       class="input-premium w-full rounded-2xl pl-14 pr-14 py-4 text-sm">
-                <button type="button" class="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition">
-                    <i class="fa-regular fa-eye-slash"></i>
+                <input type="password" id="password" name="password" required placeholder="Masukkan Password"
+                    class="input-premium w-full rounded-2xl pl-14 pr-14 py-4 text-sm">
+                <button type="button" id="togglePassword"
+                    class="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition">
+                    <i id="eyeIcon" class="fa-regular fa-eye-slash"></i>
                 </button>
             </div>
 
-            <div class="pt-4">
-                <button type="submit" class="btn-bsi-gold w-full py-4 rounded-3xl font-black text-xs uppercase tracking-widest shadow-xl transition">
+            @if (Route::has('password.request'))
+                <div class="text-right mb-6 px-2">
+                    <a href="{{ route('password.request') }}"
+                        class="text-xs text-gray-400 hover:text-[#F2A900] transition decoration-2 underline-offset-4 hover:underline">
+                        Lupa Password?
+                    </a>
+                </div>
+            @endif
+
+            <div>
+                <button type="submit"
+                    class="btn-bsi-gold w-full py-4 rounded-3xl font-black text-xs uppercase tracking-widest shadow-xl transition">
                     LOGIN SEKARANG
                 </button>
             </div>
@@ -141,23 +155,45 @@
             <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
                 &copy; 2026 BSI KCP Padang Ulak Karang
             </p>
-            
+
             <div class="h-[1px] w-12 bg-gray-700 mx-auto opacity-30"></div>
 
             <p class="text-xs text-white font-medium">
-                Belum punya akun? 
-                <a href="{{ url('/register') }}" class="text-[#F2A900] font-bold hover:text-[#FFC133] transition decoration-2 underline-offset-4 hover:underline">
+                Belum punya akun?
+                <a href="{{ url('/register') }}"
+                    class="text-[#F2A900] font-bold hover:text-[#FFC133] transition decoration-2 underline-offset-4 hover:underline">
                     Daftar Sekarang
                 </a>
             </p>
-            
+
             <div class="mt-6">
-                <a href="{{ url('/') }}" class="text-[10px] text-gray-500 hover:text-white transition uppercase tracking-widest">
+                <a href="{{ url('/') }}"
+                    class="text-[10px] text-gray-500 hover:text-white transition uppercase tracking-widest">
                     <i class="fa-solid fa-arrow-left mr-1"></i> Kembali ke Beranda
                 </a>
             </div>
         </div>
     </div>
 
+    <script>
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+
+            if (type === 'password') {
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            } else {
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
+        });
+    </script>
+
 </body>
+
 </html>

@@ -5,6 +5,7 @@ use App\Http\Controllers\BarangController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TransaksiController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\LaporanController;
 
 // Halaman Welcome
 Route::get('/', function () {
@@ -45,6 +46,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // KUMPULAN RUTE KELOLA USER (USER MANAGEMENT)
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::post('/users/store', [UserController::class, 'store'])->name('users.store');
+    Route::put('/users/update/{id}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/users/delete/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+
+    Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
 });
 
 // Memuat rute autentikasi standar (login, logout, dll)

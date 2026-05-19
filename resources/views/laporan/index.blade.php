@@ -1,85 +1,228 @@
 @extends('layouts.app')
-
-@section('page_title', 'Laporan Transaksi')
+@section('page_title', 'Laporan Perpindahan')
 
 @section('content')
-<div class="space-y-6">
-    <div class="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
-        <div class="flex flex-wrap md:flex-nowrap items-end gap-6">
-            <div class="flex-1">
-                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2 ml-1">Dari Tanggal</label>
-                <input type="date" class="w-full bg-gray-50 border-none rounded-2xl p-3 text-sm text-gray-500 focus:ring-2 focus:ring-[#00676F]">
+    <div class="space-y-6">
+
+        <div class="hidden-web-header border-b-4 border-[#00676F] pb-4 mb-6 items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-[#00676F] text-white p-2 rounded-xl text-center">
+                    <h1 class="font-black italic text-xl leading-none">BSI</h1>
+                </div>
+                <div>
+                    <h2 class="text-base font-black text-[#00676F] uppercase tracking-tight">PT Bank Syariah Indonesia, Tbk
+                    </h2>
+                    <p class="text-[10px] text-gray-500 font-bold">KCP PADANG ULAK KARANG • Jl. S. Parman No. 40, Kota Padang
+                    </p>
+                </div>
             </div>
-            <div class="flex-1">
-                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2 ml-1">Sampai Tanggal</label>
-                <input type="date" class="w-full bg-gray-50 border-none rounded-2xl p-3 text-sm text-gray-500 focus:ring-2 focus:ring-[#00676F]">
-            </div>
-            <div class="flex-1">
-                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2 ml-1">Barang</label>
-                <select class="w-full bg-gray-50 border-none rounded-2xl p-3 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-[#00676F]">
-                    <option>Semua Barang</option>
-                    <option>Kartu ATM BSI</option>
-                    <option>Buku Tabungan BSI</option>
-                </select>
-            </div>
-            <div class="flex gap-2">
-                <button class="bg-[#00A3AD] text-white px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg hover:bg-teal-600 transition flex items-center gap-2">
-                    <i class="fas fa-filter"></i> Filter
-                </button>
-                <button class="bg-[#00676F] text-white px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg hover:bg-teal-800 transition flex items-center gap-2">
-                    <i class="fas fa-file-pdf"></i> Export PDF
-                </button>
+            <div class="text-right">
+                <h3 class="text-sm font-black text-gray-800 uppercase tracking-wider">Laporan Mutasi Logistik</h3>
+                <p class="text-[10px] text-gray-400 font-bold">Periode Buku:
+                    {{ \Carbon\Carbon::parse($tglMulai)->translatedFormat('d M Y') }} s/d
+                    {{ \Carbon\Carbon::parse($tglSelesai)->translatedFormat('d M Y') }}</p>
             </div>
         </div>
+
+        <div class="no-print bg-white p-6 rounded-[35px] border border-gray-100 shadow-sm">
+            <form action="{{ route('laporan.index') }}" method="GET" class="flex flex-col lg:flex-row items-end gap-4">
+
+                <div class="flex-1 w-full grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1.5 ml-1">Dari Tanggal</label>
+                        <input type="date" name="tgl_mulai" value="{{ $tglMulai }}"
+                            class="w-full bg-gray-50 border-none rounded-2xl p-3 text-sm font-bold text-gray-600 focus:ring-2 focus:ring-[#00676F]">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1.5 ml-1">Sampai
+                            Tanggal</label>
+                        <input type="date" name="tgl_selesai" value="{{ $tglSelesai }}"
+                            class="w-full bg-gray-50 border-none rounded-2xl p-3 text-sm font-bold text-gray-600 focus:ring-2 focus:ring-[#00676F]">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1.5 ml-1">Jenis
+                            Pergerakan</label>
+                        <select name="jenis"
+                            class="w-full bg-gray-50 border-none rounded-2xl p-3 text-sm font-bold text-[#00676F] cursor-pointer focus:ring-2 focus:ring-[#00676F]">
+                            <option value="">Semua Sirkulasi</option>
+                            <option value="MASUK" {{ $jenis == 'MASUK' ? 'selected' : '' }}>Hanya Barang Masuk (+)</option>
+                            <option value="KELUAR" {{ $jenis == 'KELUAR' ? 'selected' : '' }}>Hanya Barang Keluar (-)
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 w-full lg:w-auto">
+                    <button type="submit"
+                        class="flex-1 lg:flex-none bg-gray-100 text-gray-700 px-6 py-3.5 rounded-2xl font-bold text-xs uppercase tracking-wider hover:bg-gray-200 transition">
+                        Saring Laporan
+                    </button>
+                    <button type="button" onclick="window.print()"
+                        class="flex-1 lg:flex-none bg-[#00676F] text-white px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-teal-900/10 hover:bg-teal-800 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-print"></i> Cetak Dokumen
+                    </button>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="bg-white rounded-[35px] shadow-sm border border-gray-100 overflow-hidden print-border-none">
+            <div class="no-print p-6 border-b border-gray-50 bg-gray-50/30">
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Arsip Log Transaksi Terpilih</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left print-text-black">
+                    <thead class="bg-gray-50/50 print-bg-gray border-b">
+                        <tr class="text-[10px] uppercase tracking-widest text-gray-400 print-text-black">
+                            <th class="p-5 text-center w-16">No</th>
+                            <th class="p-5">Tanggal Buku</th>
+                            <th class="p-5">Spesifikasi Item Logistik</th>
+                            <th class="p-5 text-center">Jenis Mutasi</th>
+                            <th class="p-5 text-center">Volume Satuan</th>
+                            <th class="p-5">Petugas Input</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50 print-divide">
+                        @forelse ($laporan as $index => $l)
+                            <tr class="hover:bg-gray-50/50 transition print-row-break">
+                                <td class="p-5 text-center font-bold text-[#00676F] print-text-black">{{ $index + 1 }}
+                                </td>
+                                <td class="p-5 text-xs font-bold text-gray-500 print-text-black">
+                                    {{ \Carbon\Carbon::parse($l->tanggal)->translatedFormat('d/m/Y') }}
+                                </td>
+                                <td class="p-5 font-bold text-gray-800 print-text-black">{{ $l->nama_barang }}</td>
+                                <td class="p-5 text-center">
+                                    @if (strtoupper($l->jenis) === 'MASUK')
+                                        <span
+                                            class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-0.5 rounded-full text-[9px] font-black uppercase print-badge-masuk">MASUK</span>
+                                    @else
+                                        <span
+                                            class="bg-rose-50 text-rose-700 border border-rose-200 px-3 py-0.5 rounded-full text-[9px] font-black uppercase print-badge-keluar">KELUAR</span>
+                                    @endif
+                                </td>
+                                <td
+                                    class="p-5 text-center font-black text-sm {{ strtoupper($l->jenis) == 'MASUK' ? 'text-emerald-600' : 'text-rose-600' }} print-text-black">
+                                    {{ strtoupper($l->jenis) == 'MASUK' ? '+' : '-' }}{{ number_format($l->jumlah) }}
+                                </td>
+                                <td class="p-5 text-xs text-gray-500 font-bold uppercase print-text-black">
+                                    {{ $l->petugas ?? 'System' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6"
+                                    class="p-12 text-center text-sm font-bold text-gray-400 uppercase tracking-widest">
+                                    <i class="fa-solid fa-folder-open block text-2xl mb-2 text-gray-300"></i> Tidak ada
+                                    mutasi sirkulasi pada periode ini
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="hidden-print-footer grid grid-cols-2 mt-12 pt-8 text-xs font-bold text-center">
+            <div>
+                <p class="mb-16 text-gray-400 uppercase tracking-wider text-[9px]">Dibuat Oleh Piket,</p>
+                <p class="text-gray-800 border-b border-gray-400 inline-block px-6 pb-1">{{ auth()->user()->name }}</p>
+                <p class="text-[9px] text-gray-400 mt-1 uppercase">{{ auth()->user()->jabatan }} LOGISTIK</p>
+            </div>
+            <div>
+                <p class="mb-16 text-gray-400 uppercase tracking-wider text-[9px]">Mengetahui,</p>
+                <p class="text-gray-800 border-b border-gray-400 inline-block px-6 pb-1">___________________________</p>
+                <p class="text-[9px] text-gray-400 mt-1 uppercase">Head of KCP Padang Ulak Karang</p>
+            </div>
+        </div>
+
     </div>
 
-    <div class="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden">
-        <div class="p-8 border-b border-gray-50 bg-gray-50/30">
-            <h3 class="text-xs font-black text-gray-800 uppercase tracking-widest">Riwayat Transaksi Persediaan</h3>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="text-[10px] text-gray-400 uppercase tracking-[0.2em] border-b">
-                        <th class="py-5 px-8">No</th>
-                        <th class="py-5">Tanggal</th>
-                        <th class="py-5">Barang</th>
-                        <th class="py-5">Jenis</th>
-                        <th class="py-5">Jumlah</th>
-                        <th class="py-5 px-8">Keterangan</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-50">
-                    <tr class="hover:bg-gray-50/80 transition">
-                        <td class="py-5 px-8 font-black text-[#00676F]">1</td>
-                        <td class="py-5 text-sm text-gray-500">24/04/2024</td>
-                        <td class="py-5 font-bold text-gray-700">Kartu ATM BSI</td>
-                        <td class="py-5">
-                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[9px] font-black uppercase">Masuk</span>
-                        </td>
-                        <td class="py-5 font-black text-gray-800">50</td>
-                        <td class="py-5 px-8 text-xs text-gray-400 italic">Stok awal</td>
-                    </tr>
-                    <tr class="hover:bg-gray-50/80 transition">
-                        <td class="py-5 px-8 font-black text-[#00676F]">2</td>
-                        <td class="py-5 text-sm text-gray-500">23/04/2024</td>
-                        <td class="py-5 font-bold text-gray-700">Buku Tabungan</td>
-                        <td class="py-5">
-                            <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-[9px] font-black uppercase">Keluar</span>
-                        </td>
-                        <td class="py-5 font-black text-gray-800">10</td>
-                        <td class="py-5 px-8 text-xs text-gray-400 italic">Diberikan ke nasabah</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="p-8 bg-gray-50 flex justify-between items-center border-t">
-            <p class="text-[10px] font-bold text-gray-400 uppercase">Total Transaksi: 2</p>
-            <div class="flex gap-6">
-                <p class="text-[10px] font-bold text-green-600 uppercase">Total Masuk: 150</p>
-                <p class="text-[10px] font-bold text-red-600 uppercase">Total Keluar: 30</p>
-            </div>
-        </div>
-    </div>
-</div>
+    {{-- MANIPULASI CSS PRINT VERSI PERBAIKAN TOTAL (ANTI-BOCOR SIDEBAR) --}}
+    <style>
+        .hidden-web-header,
+        .hidden-print-footer {
+            display: none;
+        }
+
+        @media print {
+
+            /* 1. SELEKTOR KHUSUS: Bongkar paksa pembungkus utama tanpa merusak utilitas .flex global */
+            html,
+            body,
+            body>div,
+            main {
+                display: block !important;
+                position: static !important;
+                overflow: visible !important;
+                height: auto !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background-color: #ffffff !important;
+                box-shadow: none !important;
+            }
+
+            /* 2. PROTEKSI ULTRA: Hancurkan dan sembunyikan sidebar serta header web sampai ke akar-akarnya */
+            body aside,
+            body header,
+            .no-print,
+            body aside *,
+            body header * {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                width: 0 !important;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+            }
+
+            /* 3. Tampilkan Kop Surat & Tanda Tangan Lapangan */
+            .hidden-web-header {
+                display: flex !important;
+            }
+
+            .hidden-print-footer {
+                display: grid !important;
+            }
+
+            /* 4. Gaya Tabel Ramah Printer */
+            .print-border-none {
+                border: none !important;
+                box-shadow: none !important;
+            }
+
+            .print-text-black {
+                color: #000000 !important;
+                font-size: 11px !important;
+            }
+
+            .print-bg-gray {
+                background-color: #f8fafc !important;
+                border-bottom: 2px solid #000000 !important;
+            }
+
+            .print-divide>tr {
+                border-bottom: 1px solid #e2e8f0 !important;
+            }
+
+            .print-badge-masuk {
+                background: #f0fdf4 !important;
+                color: #166534 !important;
+                border: 1px solid #bbf7d0 !important;
+            }
+
+            .print-badge-keluar {
+                background: #fef2f2 !important;
+                color: #991b1b !important;
+                border: 1px solid #fecaca !important;
+            }
+
+            .print-row-break {
+                page-break-inside: avoid !important;
+            }
+        }
+    </style>
 @endsection

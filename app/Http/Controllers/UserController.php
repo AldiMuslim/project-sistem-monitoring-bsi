@@ -2,74 +2,94 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
+use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Gate;
 
 class UserController extends Controller
 {
+    /**
+     * TAMPILKAN HALAMAN KELOLA PENGGUNA (KHUSUS ADMIN)
+     */
     public function index()
     {
-        $users = User::all();
+        // Proteksi Gate: Hanya Admin yang bisa masuk
+        Gate::authorize('manage-users');
+
+        $users = User::orderBy('created_at', 'desc')->get();
         return view('users.index', compact('users'));
     }
 
-    public function create()
-    {
-        return view('users.create');
-    }
-
+    /**
+     * SIMPAN PENGGUNA BARU
+     */
     public function store(Request $request)
     {
+        Gate::authorize('manage-users');
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
+            'jabatan' => 'required|string',
         ]);
 
         User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'jabatan' => 'Administrator', // Nilai default saat tambah baru
+            'jabatan' => $request->jabatan,
         ]);
 
-        return redirect()->route('pengguna.index')->with('success', 'Admin berhasil ditambah!');
+        return back()->with('success', 'Pengguna baru berhasil didaftarkan!');
     }
 
-    // FUNGSI INI YANG MENYEBABKAN ERROR JIKA HILANG
-    public function edit(User $user)
+    /**
+     * UPDATE DATA PENGGUNA
+     */
+    public function update(Request $request, $id)
     {
-        // Proteksi: Jika bukan admin, tendang balik ke dashboard
-        if (auth()->user()->jabatan !== 'admin') {
-            return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses.');
-        }
+        Gate::authorize('manage-users');
 
-        return view('users.edit', compact('user'));
-    }
-
-    public function update(Request $request, User $user)
-    {
-        // Proteksi: Hanya admin yang bisa update
-        if (auth()->user()->jabatan !== 'admin') {
-            abort(403, 'Unauthorized action.');
-        }
+        $user = User::findOrFail($id);
 
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'jabatan' => 'required',
+            'jabatan' => 'required|string',
+            'password' => 'nullable|string|min:8', // Password opsional saat edit
         ]);
 
-        $user->update($request->all());
+        $data = [
+            'name' => $request->name,
+            'email' => $request->email,
+            'jabatan' => $request->jabatan,
+        ];
 
-        return redirect()->route('users.index')->with('success', 'Data petugas berhasil diubah.');
+        // Jika password diisi, enkripsi dan masukkan ke array update
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        $user->update($data);
+
+        return back()->with('success', 'Data pengguna berhasil diperbarui!');
     }
 
+    /**
+     * HAPUS PENGGUNA
+     */
     public function destroy($id)
     {
-        $user = User::findOrFail($id);
-        $user->delete();
-        return redirect()->route('pengguna.index')->with('success', 'Admin dihapus!');
+        Gate::authorize('manage-users');
+
+        // Mencegah admin menghapus akun dirinya sendiri secara tidak sengaja
+        if (auth()->user()->id == $id) {
+            return back()->with('error', 'Akses Ditolak: Anda tidak bisa menghapus akun Anda sendiri!');
+        }
+
+        User::findOrFail($id)->delete();
+        return back()->with('success', 'Pengguna berhasil dihapus dari sistem!');
     }
 }

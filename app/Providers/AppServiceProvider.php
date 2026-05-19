@@ -6,6 +6,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use App\Models\User;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Notifications\Messages\MailMessage;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,6 +36,18 @@ class AppServiceProvider extends ServiceProvider
         // Gate untuk mengecek apakah user adalah petugas
         Gate::define('is-petugas', function (User $user) {
             return $user->jabatan === 'petugas';
+        });
+
+        // Interupsi Email Reset Password bawaan agar memakai desain BSI Premium
+        ResetPassword::toMailUsing(function (object $notifiable, string $token) {
+            $url = url(route('password.reset', [
+                'token' => $token,
+                'email' => $notifiable->getEmailForPasswordReset(),
+            ], false));
+
+            return (new MailMessage)
+                ->subject('Keamanan Akun - BSI Inventory System')
+                ->view('emails.bsi-reset-password', ['url' => $url, 'name' => $notifiable->name]);
         });
     }
 }

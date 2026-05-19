@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Ini laci untuk menyimpan pilihan Admin/Petugas kamu
-            $table->string('jabatan')->nullable()->after('email');
+            // Menambahkan default('petugas') agar otomatis menjadi petugas
+            $table->string('jabatan')->default('petugas')->after('email');
         });
     }
 

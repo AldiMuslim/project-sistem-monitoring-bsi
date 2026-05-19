@@ -1,78 +1,76 @@
 @extends('layouts.app')
+@section('page_title', 'Kelola Pengguna')
 
 @section('content')
-    <div class="container mx-auto py-8">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-semibold text-gray-800">Daftar Pengguna / Petugas</h2>
+    <div class="p-8">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-2xl font-black text-[#00676F]">Kelola Pengguna</h1>
+                <p class="text-sm text-gray-400">Manajemen hak akses akun Admin & Petugas BSI</p>
+            </div>
 
-            {{-- Hanya Admin yang bisa melihat tombol Tambah Pengguna --}}
-            @if (auth()->user()->jabatan === 'admin')
-                <a href="{{ route('pengguna.create') }}"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    + Tambah Pengguna
-                </a>
-            @endif
+            <button onclick="openUserModal('tambah')"
+                class="bg-[#00676F] text-white px-6 py-3 rounded-2xl font-bold shadow-lg hover:bg-teal-800 transition">
+                + Tambah Pengguna
+            </button>
         </div>
 
         @if (session('success'))
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            <div class="mb-4 p-4 bg-green-100 text-green-700 rounded-2xl font-bold">
                 {{ session('success') }}
             </div>
         @endif
+        @if (session('error'))
+            <div class="mb-4 p-4 bg-red-100 text-red-700 rounded-2xl font-bold">
+                {{ session('error') }}
+            </div>
+        @endif
 
-        <div class="bg-white shadow-md rounded my-6 overflow-x-auto">
-            <table class="min-w-full bg-white">
-                <thead>
-                    <tr class="w-full bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                        <th class="py-3 px-6 text-left">Nama</th>
-                        <th class="py-3 px-6 text-left">Email</th>
-                        <th class="py-3 px-6 text-center">Jabatan</th>
-                        <th class="py-3 px-6 text-center">Aksi</th>
+        <div class="bg-white rounded-[35px] shadow-sm overflow-hidden border border-gray-100">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50/50 border-b">
+                    <tr class="text-[11px] uppercase tracking-widest text-gray-400">
+                        <th class="p-6 text-center">No</th>
+                        <th class="p-6">Nama Lengkap</th>
+                        <th class="p-6">Alamat Email</th>
+                        <th class="p-6 text-center">Hak Akses / Jabatan</th>
+                        <th class="p-6 text-center">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="text-gray-600 text-sm font-light">
-                    @foreach ($users as $user)
-                        <tr class="border-b border-gray-200 hover:bg-gray-100">
-                            <td class="py-3 px-6 text-left whitespace-nowrap">
-                                <span class="font-medium">{{ $user->name }}</span>
+                <tbody class="divide-y divide-gray-50">
+                    @foreach ($users as $index => $u)
+                        <tr class="hover:bg-gray-50/50 transition">
+                            <td class="p-6 text-center font-bold text-[#00676F]">{{ $index + 1 }}</td>
+                            <td class="p-6 font-bold text-gray-800">{{ $u->name }}</td>
+                            <td class="p-6 text-sm text-gray-500 font-medium">{{ $u->email }}</td>
+                            <td class="p-6 text-center">
+                                @if (strtolower($u->jabatan) === 'admin')
+                                    <span
+                                        class="inline-flex items-center text-[9px] px-3 py-0.5 rounded-full font-black border bg-teal-50 text-teal-700 border-teal-200 uppercase tracking-wider">
+                                        <i class="fa-solid fa-shield text-[7px] mr-1"></i> Administrator
+                                    </span>
+                                @else
+                                    <span
+                                        class="inline-flex items-center text-[9px] px-3 py-0.5 rounded-full font-black border bg-blue-50 text-blue-700 border-blue-200 uppercase tracking-wider">
+                                        <i class="fa-solid fa-user text-[7px] mr-1"></i> Petugas / Anggota
+                                    </span>
+                                @endif
                             </td>
-                            <td class="py-3 px-6 text-left">
-                                {{ $user->email }}
-                            </td>
-                            <td class="py-3 px-6 text-center">
-                                <span
-                                    class="bg-{{ $user->jabatan === 'admin' ? 'purple' : 'green' }}-200 text-{{ $user->jabatan === 'admin' ? 'purple' : 'green' }}-600 py-1 px-3 rounded-full text-xs">
-                                    {{ ucfirst($user->jabatan) }}
-                                </span>
-                            </td>
-                            <td class="py-3 px-6 text-center">
-                                <div class="flex item-center justify-center">
-                                    {{-- Proteksi Tampilan: Hanya Admin yang bisa Edit/Hapus --}}
-                                    @if (auth()->user()->jabatan === 'admin')
-                                        <a href="{{ route('pengguna.edit', $user->id) }}"
-                                            class="w-4 mr-2 transform hover:text-yellow-500 hover:scale-110">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                            </svg>
-                                        </a>
-                                        <form action="{{ route('pengguna.destroy', $user->id) }}" method="POST"
-                                            onsubmit="return confirm('Apakah Anda yakin ingin menghapus pengguna ini?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                class="w-4 ml-2 transform hover:text-red-500 hover:scale-110">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                    stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                        </form>
-                                    @else
-                                        <span class="text-gray-400 italic text-xs">No Access</span>
-                                    @endif
+                            <td class="p-6">
+                                <div class="flex justify-center gap-3">
+                                    <button onclick="openUserModal('edit', {{ json_encode($u) }})"
+                                        class="bg-orange-100 text-orange-600 p-3 rounded-2xl hover:bg-orange-500 hover:text-white transition shadow-sm">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+
+                                    <form action="/users/delete/{{ $u->id }}" method="POST"
+                                        onsubmit="return confirm('Hapus pengguna {{ $u->name }} dari sistem?')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit"
+                                            class="bg-red-100 text-red-600 p-3 rounded-2xl hover:bg-red-500 hover:text-white transition shadow-sm">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
@@ -81,4 +79,105 @@
             </table>
         </div>
     </div>
+
+    {{-- MODAL TAMBAH / EDIT USER PREMIUM --}}
+    <div id="modalUserBSI"
+        class="fixed inset-0 bg-teal-900/40 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-[45px] shadow-2xl overflow-hidden border-b-[10px] border-[#F2A900]">
+            <div class="p-10">
+                <h3 id="uModalTitle" class="text-2xl font-black text-[#00676F] italic mb-8 text-center">Registrasi Pengguna
+                    Baru</h3>
+                <form id="uForm" method="POST" class="space-y-5">
+                    @csrf
+                    <div id="uMethod"></div>
+
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 tracking-widest">Nama
+                            Lengkap</label>
+                        <input type="text" name="name" id="uNama" placeholder="Nama Lengkap Karyawan"
+                            class="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-[#00676F] font-bold text-[#00676F] mt-1"
+                            required>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 tracking-widest">Alamat Email
+                            Resmi</label>
+                        <input type="email" name="email" id="uEmail" placeholder="contoh@bsi.co.id"
+                            class="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-[#00676F] font-bold text-[#00676F] mt-1"
+                            required>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 tracking-widest">Hak Akses
+                            Sistem</label>
+                        <select name="jabatan" id="uJabatan" required
+                            class="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-[#00676F] font-bold text-[#00676F] mt-1 cursor-pointer">
+                            <option value="" disabled selected hidden>-- Pilih Hak Akses --</option>
+                            <option value="admin">Admin (Full Kontrol)</option>
+                            <option value="petugas">Petugas / Anggota (Hanya Transaksi)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-400 uppercase ml-2 tracking-widest">Kata Sandi
+                            Akun</label>
+                        <input type="password" name="password" id="uPassword" placeholder="Min. 8 Karakter"
+                            class="w-full bg-gray-50 border-none rounded-2xl px-5 py-4 focus:ring-2 focus:ring-[#00676F] font-bold text-[#00676F] mt-1">
+                        <p id="uPasswordHelp" class="text-[9px] text-gray-400 mt-1 ml-2 hidden">*Kosongkan jika tidak ingin
+                            mengganti password</p>
+                    </div>
+
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" onclick="closeUserModal()"
+                            class="flex-1 py-4 font-black text-gray-400 uppercase tracking-widest text-xs transition hover:text-red-500">Batal</button>
+                        <button type="submit"
+                            class="flex-[2] bg-[#00676F] text-white py-4 rounded-3xl font-black uppercase tracking-widest shadow-xl shadow-teal-900/20 transition hover:bg-[#004d54]">Simpan
+                            Data</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uModal = document.getElementById('modalUserBSI');
+        const userForm = document.getElementById('uForm');
+
+        function openUserModal(mode, data = null) {
+            uModal.classList.replace('hidden', 'flex');
+
+            if (mode === 'edit') {
+                document.getElementById('uModalTitle').innerText = 'Ubah Informasi Pengguna';
+                userForm.action = "/users/update/" + data.id;
+                document.getElementById('uMethod').innerHTML = '@method('PUT')';
+
+                document.getElementById('uNama').value = data.name;
+                document.getElementById('uEmail').value = data.email;
+                document.getElementById('uJabatan').value = data.jabatan;
+
+                // Set password opsional saat edit data dilakukan
+                document.getElementById('uPassword').required = false;
+                document.getElementById('uPassword').placeholder = "•••••••• (Isi jika diganti)";
+                document.getElementById('uPasswordHelp').classList.remove('hidden');
+            } else {
+                document.getElementById('uModalTitle').innerText = 'Registrasi Pengguna Baru';
+                userForm.action = "{{ route('users.store') }}";
+                document.getElementById('uMethod').innerHTML = '';
+                userForm.reset();
+
+                document.getElementById('uPassword').required = true;
+                document.getElementById('uPassword').placeholder = "Masukkan Password Akun";
+                document.getElementById('uPasswordHelp').addClass('hidden');
+            }
+        }
+
+        function closeModalUser() {
+            uModal.classList.replace('flex', 'hidden');
+        }
+
+        // Alias fungsi agar penulisan onclick di tombol batal bekerja normal
+        function closeUserModal() {
+            uModal.classList.replace('flex', 'hidden');
+        }
+    </script>
 @endsection

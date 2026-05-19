@@ -59,4 +59,6 @@ class DashboardController extends Controller
             'chartData'
         ));
     }
+
+    
 }

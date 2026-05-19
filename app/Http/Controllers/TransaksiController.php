@@ -2,21 +2,47 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Barang;
-use App\Models\Transaksi;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Barryvdh\DomPDF\Facade\Pdf; // Pastikan sudah install laravel-dompdf
+use App\Models\Barang;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class TransaksiController extends Controller
 {
-    public function index()
+    /**
+     * HALAMAN UTAMA TRANSAKSI
+     * Mendukung Fitur Pencarian, Filter Kategori Mutasi, & Paginasi
+     */
+    public function index(Request $request)
     {
-        $barang = Barang::all();
-        $transaksi = Transaksi::with('barang')->orderBy('created_at', 'desc')->get();
-        return view('transaksi.index', compact('barang', 'transaksi'));
+        $search = $request->input('search');
+        $jenisFilter = $request->input('jenis_filter');
+
+        // Menggunakan paginate(10) agar fungsi firstItem() dan links() di Blade bekerja sempurna
+        $transaksi = DB::table('transaksis')
+            ->when($search, function ($query, $search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('nama_barang', 'LIKE', "%{$search}%")
+                        ->orWhere('petugas', 'LIKE', "%{$search}%");
+                });
+            })
+            ->when($jenisFilter, function ($query, $jenisFilter) {
+                return $query->where('jenis', $jenisFilter);
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+        // Mengambil data master barang untuk select option dropdown di form atas
+        $barang = Barang::orderBy('nama_barang', 'asc')->get();
+
+        return view('transaksi.index', compact('transaksi', 'barang'));
     }
 
+    /**
+     * SIMPAN TRANSAKSI MUTASI BARU & UPDATE STOK GUDANG
+     * Mendukung validasi input dropdown 'barang_id' & 'jenis_transaksi'
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -26,83 +52,35 @@ class TransaksiController extends Controller
             'tanggal' => 'required|date',
         ]);
 
-        $barang = Barang::findOrFail($request->barang_id);
+        $barangObj = Barang::find($request->barang_id);
 
-        if ($request->jenis_transaksi == "MASUK") {
-            $barang->stok += $request->jumlah;
-        } else {
-            if ($barang->stok < $request->jumlah) {
-                return back()->with('error', 'Gagal! Stok ' . $barang->nama_barang . ' tidak mencukupi.');
+        if ($barangObj) {
+            // Kalkulasi perubahan stok fisik di gudang
+            if ($request->jenis_transaksi == 'MASUK') {
+                $barangObj->stok += $request->jumlah;
+            } else {
+                if ($barangObj->stok < $request->jumlah) {
+                    return back()->with('error', 'Stok di gudang tidak mencukupi untuk melakukan transaksi KELUAR ini!');
+                }
+                $barangObj->stok -= $request->jumlah;
             }
-            $barang->stok -= $request->jumlah;
+
+            $barangObj->save();
+
+            // Catat log ke tabel transaksis
+            DB::table('transaksis')->insert([
+                'nama_barang' => $barangObj->nama_barang,
+                'jenis'       => $request->jenis_transaksi,
+                'jumlah'      => $request->jumlah,
+                'petugas'     => auth()->user()->name,
+                'tanggal'     => $request->tanggal,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+
+            return back()->with('success', 'Transaksi mutasi gudang berhasil dibukukan!');
         }
 
-        $barang->save();
-
-        Transaksi::create([
-            'barang_id'   => $request->barang_id,
-            'nama_barang' => $barang->nama_barang,
-            'jenis'       => $request->jenis_transaksi,
-            'jumlah'      => $request->jumlah,
-            'tanggal'     => $request->tanggal,
-            'petugas'     => Auth::user()->name,
-            'keterangan'  => $request->keterangan
-        ]);
-
-        return redirect()->route('transaksi.index')->with('success', 'Transaksi berhasil dicatat!');
-    }
-
-    /**
-     * HALAMAN LAPORAN DENGAN FILTER
-     */
-    public function laporan(Request $request)
-    {
-        $query = Transaksi::query();
-
-        // Filter berdasarkan tanggal
-        if ($request->filled('start_date')) {
-            $query->whereDate('tanggal', '>=', $request->start_date);
-        }
-        if ($request->filled('end_date')) {
-            $query->whereDate('tanggal', '<=', $request->end_date);
-        }
-
-        // Filter berdasarkan barang
-        if ($request->filled('barang_id')) {
-            $query->where('barang_id', $request->barang_id);
-        }
-
-        $riwayat = $query->orderBy('tanggal', 'desc')->get();
-        $barangs = Barang::all();
-
-        // Hitung total untuk ringkasan di bawah tabel
-        $totalMasuk = $riwayat->where('jenis', 'MASUK')->sum('jumlah');
-        $totalKeluar = $riwayat->where('jenis', 'KELUAR')->sum('jumlah');
-
-        return view('laporan', compact('riwayat', 'barangs', 'totalMasuk', 'totalKeluar'));
-    }
-
-    /**
-     * EKSPOR PDF PROFESIONAL
-     */
-    public function cetakPdf(Request $request)
-    {
-        $query = Transaksi::query();
-
-        if ($request->filled('start_date')) $query->whereDate('tanggal', '>=', $request->start_date);
-        if ($request->filled('end_date')) $query->whereDate('tanggal', '<=', $request->end_date);
-        if ($request->filled('barang_id')) $query->where('barang_id', $request->barang_id);
-
-        $riwayat = $query->orderBy('tanggal', 'asc')->get();
-
-        // Data tambahan untuk header laporan
-        $data = [
-            'riwayat' => $riwayat,
-            'tgl_cetak' => now()->translatedFormat('d F Y'),
-            'admin' => Auth::user()->name
-        ];
-
-        $pdf = Pdf::loadView('laporan_pdf', $data)->setPaper('a4', 'portrait');
-        return $pdf->download('Laporan_Persediaan_BSI_' . now()->format('Ymd') . '.pdf');
+        return back()->with('error', 'Terjadi kesalahan: Data barang tidak valid!');
     }
 }
