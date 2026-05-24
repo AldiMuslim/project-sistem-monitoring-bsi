@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Barang;
+use App\Models\Persediaan; // 1. Diubah dari App\Models\Barang
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -33,43 +33,43 @@ class TransaksiController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        // Mengambil data master barang untuk select option dropdown di form atas
-        $barang = Barang::orderBy('nama_barang', 'asc')->get();
+        // 2. Mengambil data master persediaan untuk select option dropdown di form atas
+        $persediaan = Persediaan::orderBy('nama_persediaan', 'asc')->get();
 
-        return view('transaksi.index', compact('transaksi', 'barang'));
+        return view('transaksi.index', compact('transaksi', 'persediaan'));
     }
 
     /**
      * SIMPAN TRANSAKSI MUTASI BARU & UPDATE STOK GUDANG
-     * Mendukung validasi input dropdown 'barang_id' & 'jenis_transaksi'
+     * Mendukung validasi input dropdown 'persediaan_id' & 'jenis_transaksi'
      */
     public function store(Request $request)
     {
         $request->validate([
-            'barang_id' => 'required|exists:barangs,id',
+            'persediaan_id'   => 'required|exists:persediaan,id', // Diubah dari barang_id & barangs
             'jenis_transaksi' => 'required|in:MASUK,KELUAR',
-            'jumlah' => 'required|numeric|min:1',
-            'tanggal' => 'required|date',
+            'jumlah'          => 'required|numeric|min:1',
+            'tanggal'         => 'required|date',
         ]);
 
-        $barangObj = Barang::find($request->barang_id);
+        $persediaanObj = Persediaan::find($request->persediaan_id); // Diubah dari Barang
 
-        if ($barangObj) {
+        if ($persediaanObj) {
             // Kalkulasi perubahan stok fisik di gudang
             if ($request->jenis_transaksi == 'MASUK') {
-                $barangObj->stok += $request->jumlah;
+                $persediaanObj->stok += $request->jumlah;
             } else {
-                if ($barangObj->stok < $request->jumlah) {
+                if ($persediaanObj->stok < $request->jumlah) {
                     return back()->with('error', 'Stok di gudang tidak mencukupi untuk melakukan transaksi KELUAR ini!');
                 }
-                $barangObj->stok -= $request->jumlah;
+                $persediaanObj->stok -= $request->jumlah;
             }
 
-            $barangObj->save();
+            $persediaanObj->save();
 
             // Catat log ke tabel transaksis
             DB::table('transaksis')->insert([
-                'nama_barang' => $barangObj->nama_barang,
+                'nama_barang' => $persediaanObj->nama_persediaan, // Kolom log tetap nama_barang, diisi dari nama_persediaan
                 'jenis'       => $request->jenis_transaksi,
                 'jumlah'      => $request->jumlah,
                 'petugas'     => auth()->user()->name,
@@ -81,6 +81,6 @@ class TransaksiController extends Controller
             return back()->with('success', 'Transaksi mutasi gudang berhasil dibukukan!');
         }
 
-        return back()->with('error', 'Terjadi kesalahan: Data barang tidak valid!');
+        return back()->with('error', 'Terjadi kesalahan: Data persediaan tidak valid!');
     }
 }

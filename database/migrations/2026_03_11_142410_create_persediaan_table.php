@@ -11,25 +11,29 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('barangs', function (Blueprint $table) {
+        // 1. Nama tabel diubah menjadi 'persediaan'
+        Schema::create('persediaan', function (Blueprint $table) {
             $table->id();
             
-            // Nama barang (Contoh: Kartu ATM GPN, Buku Tabungan Wadiah)
-            $table->string('nama_barang'); 
+            // 2. Diubah menjadi nama_persediaan agar konsisten dengan nama tabel
+            $table->string('nama_persediaan'); 
             
-            // Jenis barang (Otomatis: ATM atau Buku)
+            // Jenis persediaan (ATM atau Buku)
             $table->string('jenis'); 
             
-            // Jumlah stok barang yang tersedia
+            // Jumlah stok persediaan yang tersedia
             $table->integer('stok')->default(0); 
             
-            // Satuan barang (Pcs, Box, dll)
+            // Satuan persediaan (Pcs, Box, dll)
             $table->string('satuan')->default('Pcs'); 
             
             // Keterangan tambahan (Contoh: Cetakan tahun 2026)
             $table->text('keterangan')->nullable(); 
             
             $table->timestamps();
+            
+            // 3. Langsung tambahkan softDeletes di sini agar tidak memerlukan file migrasi tambahan
+            $table->softDeletes(); 
         });
     }
 
@@ -38,6 +42,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('barangs');
+        Schema::dropIfExists('persediaan');
     }
 };

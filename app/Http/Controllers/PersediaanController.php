@@ -3,37 +3,38 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Barang;
+use App\Models\Persediaan; // 1. Diubah dari App\Models\Barang
 use App\Models\Transaksi;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Carbon\Carbon;
 
-class BarangController extends Controller
+class PersediaanController extends Controller // 2. Diubah dari BarangController
 {
     /**
      * DASHBOARD DINAMIS PREMIUM
-     * Mengukur Tren Barang Masuk vs Keluar Selama 7 Hari Terakhir
+     * Mengukur Tren Persediaan Masuk vs Keluar Selama 7 Hari Terakhir
      */
     public function dashboard()
     {
-        $totalJenisBarang = Barang::count();
-        $totalStok = Barang::sum('stok');
+        $totalJenisPersediaan = Persediaan::count(); // Diubah dari Barang
+        $totalStok = Persediaan::sum('stok'); // Diubah dari Barang
         $transaksiHariIni = Transaksi::whereDate('created_at', Carbon::today())->count();
-        
+
         $itemMasukHariIni = Transaksi::whereDate('created_at', Carbon::today())->where('jenis', 'MASUK')->sum('jumlah');
         $itemKeluarHariIni = Transaksi::whereDate('created_at', Carbon::today())->where('jenis', 'KELUAR')->sum('jumlah');
-        
-        $stokMenipisCount = Barang::where('stok', '<=', 5)->count();
+
+        $stokMenipisCount = Persediaan::where('stok', '<=', 5)->count(); // Diubah dari Barang
         $recentTransaksi = Transaksi::orderBy('created_at', 'desc')->limit(5)->get();
 
-        // --- TAMBAHAN HITUNGAN GRAFIK DONAT (POIN 1) ---
-        $stokATM = Barang::where('nama_barang', 'LIKE', '%ATM%')->sum('stok') ?? 0;
-        $stokBuku = Barang::where('nama_barang', 'LIKE', '%BUKU%')->sum('stok') ?? 0;
-        
+        // --- TAMBAHAN HITUNGAN GRAFIK DONAT ---
+        // Kolom dicari berdasarkan 'nama_persediaan'
+        $stokATM = Persediaan::where('nama_persediaan', 'LIKE', '%ATM%')->sum('stok') ?? 0;
+        $stokBuku = Persediaan::where('nama_persediaan', 'LIKE', '%BUKU%')->sum('stok') ?? 0;
+
         $totalAsetTerhitung = $stokATM + $stokBuku;
         $persenATM = $totalAsetTerhitung > 0 ? round(($stokATM / $totalAsetTerhitung) * 100) : 0;
-        $persenBuku = $totalAsetTerhitung > 0 ? (100 - $persenATM) : 0; // Memastikan total pas 100%
+        $persenBuku = $totalAsetTerhitung > 0 ? (100 - $persenATM) : 0;
 
         $chartData = [];
         for ($i = 6; $i >= 0; $i--) {
@@ -46,7 +47,7 @@ class BarangController extends Controller
 
             $chartData[] = [
                 'hari'        => Carbon::now()->subDays($i)->translatedFormat('D'),
-                'masuk'       => $tinggiMasuk > 0 ? $tinggiMasuk : 2, 
+                'masuk'       => $tinggiMasuk > 0 ? $tinggiMasuk : 2,
                 'keluar'      => $tinggiKeluar > 0 ? $tinggiKeluar : 2,
                 'asli_masuk'  => (int) $jumlahMasuk,
                 'asli_keluar' => (int) $jumlahKeluar
@@ -54,7 +55,7 @@ class BarangController extends Controller
         }
 
         return view('dashboard', compact(
-            'totalJenisBarang',
+            'totalJenisPersediaan',
             'totalStok',
             'transaksiHariIni',
             'itemMasukHariIni',
@@ -62,7 +63,6 @@ class BarangController extends Controller
             'stokMenipisCount',
             'recentTransaksi',
             'chartData',
-            // Kirim variabel donat ke view
             'persenATM',
             'persenBuku',
             'stokATM',
@@ -71,27 +71,21 @@ class BarangController extends Controller
     }
 
     /**
-     * HALAMAN DATA BARANG
-     * Dapat diakses oleh Admin dan Petugas (Read-Only untuk Petugas)
-     */
-    /**
-     * HALAMAN DATA BARANG
+     * HALAMAN DATA PERSEDIAAN
      * Mendukung Pencarian, Paginasi, dan Filter Stok Menipis
      */
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $filter = $request->input('filter'); // <-- Tambahan untuk menangkap parameter filter
+        $filter = $request->input('filter');
 
-        $barangs = Barang::when($search, function ($query, $search) {
-            // Mengelompokkan query pencarian agar tidak bentrok dengan filter
+        $persediaans = Persediaan::when($search, function ($query, $search) { // Diubah dari Barang
             return $query->where(function ($q) use ($search) {
-                $q->where('nama_barang', 'LIKE', "%{$search}%")
+                $q->where('nama_persediaan', 'LIKE', "%{$search}%") // Diubah dari nama_barang
                     ->orWhere('jenis', 'LIKE', "%{$search}%")
                     ->orWhere('keterangan', 'LIKE', "%{$search}%");
             });
         })
-            // --- KUNCI FILTER: Jika ada request filter 'menipis', saring yang stoknya <= 5 ---
             ->when($filter === 'menipis', function ($query) {
                 return $query->where('stok', '<=', 5);
             })
@@ -99,95 +93,87 @@ class BarangController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('barang.index', compact('barangs'));
+        return view('persediaan.index', compact('persediaans')); // Target folder view diarahkan ke folder persediaan
     }
 
     /**
-     * SIMPAN BARANG BARU
+     * SIMPAN PERSEDIAAN BARU
      * KHUSUS ADMIN
      */
     public function store(Request $request)
     {
-        // Proteksi Gate: Hanya Admin
         Gate::authorize('manage-users');
 
-        // Menambahkan 'jenis' ke dalam baris validasi wajib
         $request->validate([
-            'nama_barang' => 'required|string|max:255',
-            'jenis'       => 'required|string',
-            'stok'        => 'required|numeric|min:0',
-            'satuan'      => 'required|string',
-            'keterangan'  => 'nullable|string',
+            'nama_persediaan' => 'required|string|max:255', // Diubah dari nama_barang
+            'jenis'           => 'required|string',
+            'stok'            => 'required|numeric|min:0',
+            'satuan'          => 'required|string',
+            'keterangan'      => 'nullable|string',
         ]);
 
-        // Perbaikan: Murni menyimpan data 'jenis' sesuai pilihan dropdown modal kustom BSI Anda
-        Barang::create([
-            'nama_barang' => $request->nama_barang,
-            'jenis'       => $request->jenis,
-            'stok'        => $request->stok,
-            'satuan'      => $request->satuan,
-            'keterangan'  => $request->keterangan,
+        Persediaan::create([ // Diubah dari Barang
+            'nama_persediaan' => $request->nama_persediaan,
+            'jenis'           => $request->jenis,
+            'stok'            => $request->stok,
+            'satuan'          => $request->satuan,
+            'keterangan'      => $request->keterangan,
         ]);
 
-        return back()->with('success', 'Barang baru berhasil disimpan ke gudang!');
+        return back()->with('success', 'Persediaan baru berhasil disimpan ke gudang!');
     }
 
     /**
-     * UPDATE DATA BARANG
+     * UPDATE DATA PERSEDIAAN
      * KHUSUS ADMIN
      */
     public function update(Request $request, $id)
     {
-        // Proteksi Gate: Hanya Admin
         Gate::authorize('manage-users');
 
-        // Menambahkan validasi ketat sebelum update data dilakukan
         $request->validate([
-            'nama_barang' => 'required|string|max:255',
-            'jenis'       => 'required|string',
-            'stok'        => 'required|numeric|min:0',
-            'satuan'      => 'required|string',
-            'keterangan'  => 'nullable|string',
+            'nama_persediaan' => 'required|string|max:255', // Diubah dari nama_barang
+            'jenis'           => 'required|string',
+            'stok'            => 'required|numeric|min:0',
+            'satuan'          => 'required|string',
+            'keterangan'      => 'nullable|string',
         ]);
 
-        $barang = Barang::findOrFail($id);
+        $persediaan = Persediaan::findOrFail($id); // Diubah dari Barang
 
-        // Perbaikan: Mengupdate data secara spesifik agar sinkron dengan dropdown modal
-        $barang->update([
-            'nama_barang' => $request->nama_barang,
-            'jenis'       => $request->jenis,
-            'stok'        => $request->stok,
-            'satuan'      => $request->satuan,
-            'keterangan'  => $request->keterangan,
+        $persediaan->update([
+            'nama_persediaan' => $request->nama_persediaan,
+            'jenis'           => $request->jenis,
+            'stok'            => $request->stok,
+            'satuan'          => $request->satuan,
+            'keterangan'      => $request->keterangan,
         ]);
 
-        return back()->with('success', 'Data barang berhasil diperbarui!');
+        return back()->with('success', 'Data persediaan berhasil diperbarui!');
     }
 
     /**
-     * HAPUS BARANG
+     * HAPUS PERSEDIAAN
      * KHUSUS ADMIN
      */
     public function destroy($id)
     {
-        // Proteksi Gate: Hanya Admin
         Gate::authorize('manage-users');
 
-        Barang::findOrFail($id)->delete();
-        return back()->with('success', 'Barang berhasil dihapus!');
+        Persediaan::findOrFail($id)->delete(); // Diubah dari Barang
+        return back()->with('success', 'Persediaan berhasil dihapus!');
     }
 
     /**
-     * HALAMAN TRANSAKSI (MUTASI BARANG)
+     * HALAMAN TRANSAKSI (MUTASI PERSEDIAAN)
      * Mendukung Pencarian, Filter Jenis Mutasi, & Paginasi
      */
     public function transaksi(Request $request)
     {
-        // 1. Tangkap parameter filter dari URL
         $search = $request->input('search');
         $jenisFilter = $request->input('jenis_filter');
 
-        // 2. Query data riwayat transaksi mutasi gudang dengan filter dinamis
+        // NB: Pencarian riwayat mutasi tetap mengacu pada nama kolom asli tabel 'transaksis' (nama_barang)
         $riwayat = DB::table('transaksis')
             ->when($search, function ($query, $search) {
                 return $query->where(function ($q) use ($search) {
@@ -199,42 +185,43 @@ class BarangController extends Controller
                 return $query->where('jenis', $jenisFilter);
             })
             ->orderBy('created_at', 'desc')
-            ->paginate(10)                  // Batasi 10 data per halaman
-            ->withQueryString();            // Mempertahankan filter saat pindah halaman
+            ->paginate(10)
+            ->withQueryString();
 
-        // 3. Ambil data barang aktif untuk keperluan Dropdown Dinamis di modal
-        $barangs = Barang::orderBy('nama_barang', 'asc')->get();
+        // Mengambil pilihan daftar untuk dropdown dari model Persediaan
+        $persediaans = Persediaan::orderBy('nama_persediaan', 'asc')->get(); // Diubah dari Barang
 
-        return view('barang.barang_keluar', compact('riwayat', 'barangs'));
+        return view('persediaan.barang_keluar', compact('riwayat', 'persediaans')); // Folder view dialihkan ke persediaan
     }
+
     /**
      * SIMPAN TRANSAKSI & UPDATE STOK
-     * Admin dan Petugas bisa melakukan transaksi
      */
     public function storeTransaksi(Request $request)
     {
         $request->validate([
-            'nama_barang' => 'required',
-            'jenis' => 'required',
-            'jumlah' => 'required|numeric|min:1',
+            'nama_persediaan' => 'required', // Diubah dari nama_barang
+            'jenis'           => 'required',
+            'jumlah'          => 'required|numeric|min:1',
         ]);
 
-        $barang = Barang::where('nama_barang', $request->nama_barang)->first();
+        $persediaan = Persediaan::where('nama_persediaan', $request->nama_persediaan)->first(); // Diubah dari Barang
 
-        if ($barang) {
+        if ($persediaan) {
             if ($request->jenis == 'MASUK') {
-                $barang->stok += $request->jumlah;
+                $persediaan->stok += $request->jumlah;
             } else {
-                if ($barang->stok < $request->jumlah) {
+                if ($persediaan->stok < $request->jumlah) {
                     return back()->with('error', 'Stok tidak cukup!');
                 }
-                $barang->stok -= $request->jumlah;
+                $persediaan->stok -= $request->jumlah;
             }
 
-            $barang->save();
+            $persediaan->save();
 
+            // Menyimpan riwayat log mutasi ke tabel 'transaksis'
             DB::table('transaksis')->insert([
-                'nama_barang' => $request->nama_barang,
+                'nama_barang' => $request->nama_persediaan, // Kolom tabel transaksis diisi nilai nama_persediaan
                 'jenis'       => $request->jenis,
                 'jumlah'      => $request->jumlah,
                 'petugas'     => auth()->user()->name,
@@ -245,6 +232,6 @@ class BarangController extends Controller
 
             return back()->with('success', 'Transaksi berhasil disimpan!');
         }
-        return back()->with('error', 'Barang tidak ditemukan!');
+        return back()->with('error', 'Persediaan tidak ditemukan!');
     }
 }

@@ -38,10 +38,13 @@
                 class="flex items-center gap-3 p-3 rounded-xl {{ Request::is('dashboard') ? 'bg-teal-800/50' : '' }} hover:bg-[#F2A900] hover:text-gray-900 transition font-medium group">
                 <i class="fas fa-th-large w-5 text-center"></i> Dashboard
             </a>
-            <a href="{{ route('barang.index') }}"
-                class="flex items-center gap-3 p-3 rounded-xl {{ Request::is('barang*') ? 'bg-teal-800/50' : '' }} hover:bg-[#F2A900] hover:text-gray-900 transition font-medium">
-                <i class="fas fa-box w-5 text-center"></i> Data Barang
+
+            {{-- PERBAIKAN: Mengarahkan ke rute dan seleksi aktif persediaan --}}
+            <a href="{{ route('persediaan.index') }}"
+                class="flex items-center gap-3 p-3 rounded-xl {{ Request::is('persediaan*') ? 'bg-teal-800/50' : '' }} hover:bg-[#F2A900] hover:text-gray-900 transition font-medium">
+                <i class="fas fa-box w-5 text-center"></i> Data Persediaan
             </a>
+
             <a href="{{ route('transaksi.index') }}"
                 class="flex items-center gap-3 p-3 rounded-xl {{ Request::is('transaksi*') ? 'bg-teal-800/50' : '' }} hover:bg-[#F2A900] hover:text-gray-900 transition font-medium">
                 <i class="fas fa-exchange-alt w-5 text-center"></i> Transaksi

@@ -2,7 +2,7 @@
 @section('page_title', 'Dashboard')
 
 @section('content')
-    {{-- Bagian Atas: Sapaan Dinamis Islami & Jam Digital Detik Berjalan (Poin 2 & 4) --}}
+    {{-- Bagian Atas: Sapaan Dinamis Islami & Jam Digital Detik Berjalan --}}
     <div x-data="{
         time: '',
         date: '',
@@ -18,7 +18,7 @@
     }"
         class="mb-8 bg-gradient-to-br from-white to-teal-50/30 p-8 rounded-[40px] border border-teal-100/40 flex justify-between items-center relative overflow-hidden shadow-sm">
 
-        {{-- Ornamen Geometris (Poin 2) --}}
+        {{-- Ornamen Geometris --}}
         <div class="absolute inset-0 pointer-events-none opacity-[0.04] text-[#00676F] z-0">
             <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
                 <defs>
@@ -85,7 +85,7 @@
         </div>
     </div>
 
-    {{-- 2. BARIS BARU: TOMBOL PINTAS CEPAT / QUICK ACTIONS ROW (Poin 3) --}}
+    {{-- 2. BARIS TOMBOL PINTAS CEPAT --}}
     <div class="mb-8">
         <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-2">Akses Pintas Operasional</p>
         <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -98,7 +98,7 @@
                 </div>
                 <div>
                     <h4 class="text-xs font-black text-gray-800 uppercase tracking-tight">Logistik Masuk</h4>
-                    <p class="text-[9px] text-gray-400 font-medium mt-0.5">Input restock barang baru</p>
+                    <p class="text-[9px] text-gray-400 font-medium mt-0.5">Input restock persediaan baru</p>
                 </div>
             </a>
 
@@ -114,7 +114,8 @@
                 </div>
             </a>
 
-            <a href="{{ route('barang.index') }}"
+            {{-- PERBAIKAN 1: Rute diubah dari barang.index ke persediaan.index --}}
+            <a href="{{ route('persediaan.index') }}"
                 class="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4 group hover:border-blue-300 hover:shadow-md transition duration-300">
                 <div
                     class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition duration-300">
@@ -158,13 +159,14 @@
 
     {{-- 3. Ringkasan Statistik Angka --}}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {{-- Card Total Barang --}}
+        {{-- Card Total Persediaan --}}
         <div
             class="bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-[32px] text-white shadow-lg shadow-blue-200/50 flex justify-between items-center overflow-hidden relative group hover:scale-[1.02] transition-transform duration-300">
             <div class="z-10">
-                <p class="text-xs font-bold uppercase tracking-wider opacity-80">Total Barang</p>
-                <h3 class="text-4xl font-black my-2">{{ $totalJenisBarang }}</h3>
-                <span class="text-[10px] bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full font-bold">Jenis Barang</span>
+                <p class="text-xs font-bold uppercase tracking-wider opacity-80">Total Persediaan</p>
+                {{-- PERBAIKAN 2: Variabel diubah menjadi $totalJenisPersediaan --}}
+                <h3 class="text-4xl font-black my-2">{{ $totalJenisPersediaan }}</h3>
+                <span class="text-[10px] bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full font-bold">Jenis Item</span>
             </div>
             <i
                 class="fas fa-box text-7xl absolute -right-4 opacity-10 group-hover:rotate-12 transition-transform duration-500"></i>
@@ -203,7 +205,8 @@
         </div>
 
         {{-- Card Stok Menipis --}}
-        <a href="{{ route('barang.index', ['filter' => 'menipis']) }}"
+        {{-- PERBAIKAN 3: Rute diubah ke persediaan.index --}}
+        <a href="{{ route('persediaan.index', ['filter' => 'menipis']) }}"
             class="bg-gradient-to-br from-amber-700 to-stone-800 p-6 rounded-[32px] text-white shadow-lg shadow-amber-900/20 flex justify-between items-center overflow-hidden relative group hover:scale-[1.02] transition-transform duration-300 cursor-pointer">
             <div class="z-10">
                 <p class="text-xs font-bold uppercase tracking-wider opacity-80">Stok Menipis</p>
@@ -219,7 +222,7 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {{-- 4. Bagian Kiri: Visualisasi Grafik Batang + Donat (Poin 1) --}}
+        {{-- 4. Bagian Kiri: Visualisasi Grafik Batang + Donat --}}
         <div
             class="lg:col-span-2 bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 flex flex-col justify-between">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
@@ -230,10 +233,10 @@
                 </div>
                 <div class="flex flex-wrap gap-4 p-2 bg-gray-50 rounded-2xl border border-gray-100">
                     <span class="flex items-center gap-2 text-[10px] font-black text-emerald-600">
-                        <i class="fas fa-circle text-[6px]"></i> BARANG MASUK
+                        <i class="fas fa-circle text-[6px]"></i> ITEM MASUK
                     </span>
                     <span class="flex items-center gap-2 text-[10px] font-black text-[#00676F]">
-                        <i class="fas fa-circle text-[6px]"></i> BARANG KELUAR
+                        <i class="fas fa-circle text-[6px]"></i> ITEM KELUAR
                     </span>
                 </div>
             </div>
@@ -320,6 +323,7 @@
                                 class="fas {{ strtoupper($rt->jenis) == 'MASUK' ? 'fa-arrow-down' : 'fa-arrow-up' }} text-xs"></i>
                         </div>
                         <div class="flex-1">
+                            {{-- NB: Log mutasi histori transaksi tetap menggunakan properti database asli ($rt->nama_barang) --}}
                             <p
                                 class="text-xs font-black text-gray-700 leading-tight group-hover:text-teal-700 transition-colors">
                                 {{ Str::limit($rt->nama_barang, 20) }}

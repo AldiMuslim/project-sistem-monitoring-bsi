@@ -12,13 +12,14 @@
                 class="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
                 @csrf
                 <div>
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2 ml-1">Nama Barang</label>
-                    <select name="barang_id"
-                        class="w-full bg-gray-50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-[#00676F] font-bold cursor-pointer"
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2 ml-1">Nama Persediaan</label>
+                    <select name="persediaan_id"
+                        class="w-full bg-gray-50 border-none rounded-2xl p-3 text-sm focus:ring-2 focus:ring-['#00676F'] font-bold cursor-pointer"
                         required>
-                        <option value="">Pilih Barang</option>
-                        @foreach ($barang as $b)
-                            <option value="{{ $b->id }}">{{ $b->nama_barang }} (Stok: {{ $b->stok }})</option>
+                        <option value="">Pilih Persediaan</option>
+                        @foreach ($persediaan as $p)
+                            <option value="{{ $p->id }}">{{ $p->nama_persediaan }} (Stok: {{ $p->stok }})
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -56,7 +57,7 @@
                 <div class="relative flex-[2]">
                     <i class="fa-solid fa-magnifying-glass absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"></i>
                     <input type="text" name="search" value="{{ request('search') }}"
-                        placeholder="Cari barang atau nama petugas..."
+                        placeholder="Cari item persediaan atau nama petugas..."
                         class="w-full bg-gray-50 border-none rounded-xl pl-12 pr-4 py-3 text-sm focus:ring-2 focus:ring-[#00676F] font-medium text-gray-700">
                 </div>
                 <div class="flex-1">
@@ -90,7 +91,7 @@
                         <tr class="text-[10px] text-gray-400 uppercase tracking-[0.2em] border-b">
                             <th class="py-5 px-8 text-center">No</th>
                             <th class="py-5">Tanggal</th>
-                            <th class="py-5">Barang</th>
+                            <th class="py-5">Persediaan</th>
                             <th class="py-5 text-center">Jenis</th>
                             <th class="py-5 text-center">Jumlah</th>
                             <th class="py-5">Petugas</th>
@@ -143,7 +144,6 @@
 
     {{-- STYLE KUSTOM ANTI-BAYANGAN GELAP --}}
     <style>
-        /* Mematikan paksa cincin fokus gelap/shadow bawaan tailwind saat diklik */
         .bsi-pagination-wrapper *,
         .bsi-pagination-wrapper a,
         .bsi-pagination-wrapper button,
@@ -159,7 +159,6 @@
             gap: 6px !important;
         }
 
-        /* Desain dasar kapsul premium */
         .bsi-pagination-wrapper a,
         .bsi-pagination-wrapper span[aria-current="page"] span,
         .bsi-pagination-wrapper .relative.z-0>span,
@@ -174,21 +173,18 @@
             transition: all 0.2s ease-in-out !important;
         }
 
-        /* Halaman Aktif */
         .bsi-pagination-wrapper span[aria-current="page"] span {
             background-color: #00676F !important;
             color: #ffffff !important;
             border-color: #00676F !important;
         }
 
-        /* Efek Sorot Hover */
         .bsi-pagination-wrapper a:hover {
             background-color: #e6f3f4 !important;
             color: #00676F !important;
             border-color: #00676F !important;
         }
 
-        /* MENGHILANGKAN EFEK KOTAK GELAP SAAT DIKLIK (Penting!) */
         .bsi-pagination-wrapper a:focus,
         .bsi-pagination-wrapper a:active,
         .bsi-pagination-wrapper a:focus-visible,
@@ -200,7 +196,6 @@
             box-shadow: none !important;
         }
 
-        /* Warna panah disabled */
         .bsi-pagination-wrapper span[aria-disabled="true"] span {
             background-color: #f8fafc !important;
             color: #cbd5e1 !important;
@@ -217,22 +212,17 @@
         }
     </style>
 
-    {{-- FIX SCRIPT: REKAM & KUNCI SCROLL INTERNAL WADAH <main> --}}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Menemukan elemen kotak <main> tempat guliran halaman Anda berada
             const kotakMain = document.querySelector('main');
 
             if (kotakMain) {
-                // 1. Ambil catatan tinggi guliran internal <main> jika ada
                 const tinggiTerakhir = sessionStorage.getItem('guliran_main_bsi');
                 if (tinggiTerakhir) {
-                    // Setel posisi scroll <main> kembali ke titik semula
                     kotakMain.scrollTop = parseInt(tinggiTerakhir);
                     sessionStorage.removeItem('guliran_main_bsi');
                 }
 
-                // 2. Rekam posisi koordinat tinggi <main> saat tombol paginasi ditekan
                 document.addEventListener("click", function(e) {
                     const keklikPaginasi = e.target.closest('.bsi-pagination-wrapper a');
                     if (keklikPaginasi) {

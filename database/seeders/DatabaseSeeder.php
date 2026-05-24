@@ -31,11 +31,11 @@ class DatabaseSeeder extends Seeder
             ]
         );
         
-        // 3. Masukkan Data Barang Dummy
-        DB::table('barangs')->insert([
+        // 3. Masukkan Data Persediaan Dummy (Nama tabel & kolom sudah disesuaikan)
+        DB::table('persediaan')->insert([
             [
                 'id' => 1,
-                'nama_barang' => 'KARTU ATM PLATINUM',
+                'nama_persediaan' => 'KARTU ATM PLATINUM',
                 'jenis' => 'Kartu',
                 'stok' => 150,
                 'satuan' => 'Pcs',
@@ -45,7 +45,7 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'id' => 2,
-                'nama_barang' => 'BUKU TABUNGAN WADIAH',
+                'nama_persediaan' => 'BUKU TABUNGAN WADIAH',
                 'jenis' => 'Buku',
                 'stok' => 200,
                 'satuan' => 'Pcs',
@@ -55,7 +55,7 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'id' => 3,
-                'nama_barang' => 'KARTU ATM GOLD',
+                'nama_persediaan' => 'KARTU ATM GOLD',
                 'jenis' => 'Kartu',
                 'stok' => 3,
                 'satuan' => 'Pcs',
@@ -76,7 +76,7 @@ class DatabaseSeeder extends Seeder
                 'jenis' => 'KELUAR', 
                 'jumlah' => rand(10, 45), 
                 'tanggal' => $date->format('Y-m-d'),
-                'petugas' => 'Admin BSI', // Nama petugas disesuaikan
+                'petugas' => 'Admin BSI', 
                 'created_at' => $date,
                 'updated_at' => $date,
             ];
@@ -86,7 +86,7 @@ class DatabaseSeeder extends Seeder
                 'jenis' => 'KELUAR', 
                 'jumlah' => rand(5, 30), 
                 'tanggal' => $date->format('Y-m-d'),
-                'petugas' => 'Petugas BSI', // Contoh transaksi oleh petugas
+                'petugas' => 'Petugas BSI', 
                 'created_at' => $date,
                 'updated_at' => $date,
             ];

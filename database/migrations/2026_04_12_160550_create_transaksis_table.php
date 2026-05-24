@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('transaksis', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('barang_id')->nullable()->constrained('barangs')->onDelete('set null');
+            $table->foreignId('persediaan_id')->nullable()->constrained('persediaan')->onDelete('set null');
             $table->string('nama_barang');
             $table->enum('jenis', ['MASUK', 'KELUAR']);
             $table->integer('jumlah');
